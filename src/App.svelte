@@ -1,77 +1,126 @@
 <script>
-  import { fly } from "svelte/transition";
+  const keyName = "items";
 
-  let groceryItems = [];
-  let newItem = "";
+  let items = [];
 
-  function addItem() {
-    if (newItem.trim() !== "") {
-      groceryItems = [
-        ...groceryItems,
-        { id: Date.now(), text: newItem, done: false },
-      ];
-      newItem = "";
-    }
+  if (localStorage.getItem(keyName) === null) {
+    localStorage.setItem(keyName, JSON.stringify(items));
   }
 
-  async function removeItem(id) {
-    const itemToRemove = groceryItems.find((item) => item.id === id);
-    itemToRemove.done = true;
-    await new Promise((resolve) => setTimeout(resolve, 500));
-    groceryItems = groceryItems.filter((item) => item.id !== id);
-  }
+  items = JSON.parse(localStorage.getItem(keyName));
+
+  let name = "";
+
+  const updateLocalStorage = () => {
+    localStorage.setItem(keyName, JSON.stringify(items));
+  };
+
+  const addItem = () => {
+    items = [
+      ...items,
+      {
+        id: Math.random(),
+        name,
+        done: false,
+      },
+    ];
+
+    updateLocalStorage();
+
+    name = "";
+  };
+
+  const remove = (item) => {
+    items = items.filter((i) => i !== item);
+  };
+
+  const toggle = (item) => {
+    updateLocalStorage();
+  };
 </script>
 
-<div class="container">
-  <h1>Grocery Checklist</h1>
+<div>
+  <h1>Grocery List 🗒️</h1>
 
-  <div style="text-align: center;">
-    <input
-      type="text"
-      bind:value={newItem}
-      placeholder="Enter a grocery item"
-      on:keydown={(e) => (e.key === "Enter" ? addItem() : "")}
-    />
-    <button on:click={addItem}>Add Item</button>
-  </div>
+  <form on:submit|preventDefault={addItem}>
+    <label for="name">Add an item</label>
+    <input id="name" type="text" bind:value={name} />
+  </form>
 
   <ul>
-    {#each groceryItems as item (item.id)}
-      <li>
-        <input type="checkbox" on:change={() => removeItem(item.id)} />
-        <span
-          class={item.done ? "done" : ""}
-          transition:fly={{ y: 20, duration: 500 }}>{item.text}</span
-        >
+    {#each items as item}
+      <li class:done={item.done}>
+        <input
+          type="checkbox"
+          bind:checked={item.done}
+          on:change={() => toggle(item)}
+        />
+        <span>{item.name}</span>
+        <button on:click={() => remove(item)}>&times;</button>
       </li>
     {/each}
   </ul>
 </div>
 
 <style>
-  .container {
-    max-width: 600px;
-    margin: 0 auto;
-    font-family: "Arial", sans-serif;
-  }
+  div,
   h1 {
-    text-align: center;
+    color: #333;
+    max-width: 300px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+      Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
   }
-  input,
-  button {
-    font-size: 1rem;
+  #name {
+    width: 100%;
   }
-  ul {
-    list-style-type: none;
+  form {
+    margin-bottom: 0.5em;
+  }
+  input[type="text"] {
+    outline: none;
+    margin: 0;
+  }
+  input[type="text"]:focus {
+    border-color: #dc4f21;
+    box-shadow: 0 0 2px #dc4f21;
+  }
+  input[type="checkbox"] {
+    margin: 0 10px 0 0;
+  }
+  li button {
+    float: right;
+    border: none;
+    background: transparent;
     padding: 0;
+    margin: 0;
+    color: #dc4f21;
+    font-size: 18px;
+    cursor: pointer;
+  }
+  li button:hover {
+    transform: scale(2);
+  }
+  li button:focus {
+    outline: #dc4f21;
+  }
+  li:last-child {
+    border-bottom: none;
+  }
+  label {
+    display: block;
+    text-transform: uppercase;
+    font-size: 0.8em;
+    color: #777;
   }
   li {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.5rem;
+    list-style: none;
+    padding: 6px 10px;
+    border-bottom: 1px solid #ddd;
   }
-  .done {
-    text-decoration: line-through;
+  ul {
+    padding-left: 0;
+  }
+  .done span {
+    opacity: 0.4;
   }
 </style>
